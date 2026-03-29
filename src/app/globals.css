@@ -1,26 +1,166 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=ZCOOL+XiaoWei&display=swap');
+
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════
+   Poetry Reader — Ink-wash Minimalist Theme
+   ═══════════════════════════════════════════ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-paper: #f7f3e8;
+  /* 经典的“护眼纸张”色 */
+  --color-paper-learned: #9352d8;
+  /* 库洛米淡紫色奖赏背景 */
+  --color-paper-warm: #efead8;
+  --color-ink: #322f2e;
+  --color-ink-light: #5c534e;
+  --color-ink-faint: #a69b94;
+  --color-seal: #b05a48;
+  --color-seal-light: #c97d6a;
+  --color-accent-green: #6b8e6d;
+  --font-poem: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+  --font-title: 'ZCOOL XiaoWei', 'Noto Serif SC', serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-poem);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Paper grain texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Ink ripple animation for tapped lines */
+@keyframes ink-ripple {
+  0% {
+    background-size: 0% 100%;
+  }
+
+  50% {
+    background-size: 100% 100%;
+  }
+
+  100% {
+    background-size: 100% 100%;
+    opacity: 0;
+  }
+}
+
+.verse-line {
+  position: relative;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  padding: 0.15em 0;
+}
+
+.verse-line:active {
+  color: var(--color-ink-light);
+}
+
+.verse-line.playing {
+  color: var(--color-seal);
+  transition: color 0.2s ease;
+}
+
+/* Seal stamp animation */
+@keyframes stamp-press {
+  0% {
+    transform: scale(1.8) rotate(-8deg);
+    opacity: 0;
+  }
+
+  40% {
+    transform: scale(0.95) rotate(2deg);
+    opacity: 1;
+  }
+
+  60% {
+    transform: scale(1.05) rotate(-1deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.seal-stamp {
+  animation: stamp-press 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Subtle page enter */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-enter 0.6s ease-out forwards;
+}
+
+/* Dot indicator */
+.dot-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-ink-faint);
+  transition: all 0.3s ease;
+}
+
+.dot-indicator.active {
+  background: var(--color-ink);
+  width: 18px;
+  border-radius: 3px;
+}
+
+/* Ink splash reward */
+@keyframes ink-splash {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1.2);
+    opacity: 0.3;
+  }
+
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Scrollbar hidden */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

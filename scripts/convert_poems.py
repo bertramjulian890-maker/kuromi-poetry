@@ -4,21 +4,23 @@ import os
 import uuid
 
 def convert_to_simplified(data):
-    # Initialize the converter from Traditional Chinese (Taiwan standard) to Simplified Chinese
-    # t2s means Traditional to Simplified. Using s2t for Simplified to Traditional.
     cc = OpenCC('t2s') 
     
     simplified_data = []
     
-    # Process each poem in the list
-    for index, poem in enumerate(data):
+    for poem in data:
+        # Filter: Only keep poems that are manageable for a kid (e.g., <= 12 lines)
+        paragraphs = [cc.convert(p).strip() for p in poem.get("paragraphs", []) if p.strip()]
+        
+        if not paragraphs or len(paragraphs) > 12:
+            continue
+            
         simplified_poem = {
-            "id": f"poem_{uuid.uuid4().hex[:8]}", # Generate a unique short ID
+            "id": f"poem_{uuid.uuid4().hex[:8]}",
             "title": cc.convert(poem.get("title", "")),
             "author": cc.convert(poem.get("author", "")),
-            "paragraphs": [cc.convert(p) for p in poem.get("paragraphs", [])],
+            "paragraphs": paragraphs,
             "dynasty": cc.convert(poem.get("dynasty", "")),
-            "notes": [cc.convert(n) for n in poem.get("notes", [])] if poem.get("notes") else []
         }
         simplified_data.append(simplified_poem)
         
