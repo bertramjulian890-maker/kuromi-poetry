@@ -89,7 +89,7 @@ export default function SwipeableDeck() {
       if (rewardAudioRef.current) {
         rewardAudioRef.current.pause();
       }
-      const audio = new Audio('/music/reward.flac');
+      const audio = new Audio('/music/reward.mp3');
       rewardAudioRef.current = audio;
       audio.play().catch(e => console.error("Music play blocked:", e));
     } else {
