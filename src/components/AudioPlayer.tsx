@@ -6,24 +6,17 @@ export function useAudio() {
   const [playingText, setPlayingText] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.getVoices();
-    }
-  }, []);
-
-  // 核心修复：组件卸载（划走）时强制停止一切语音
+  // 组件卸载（划走）时强制停止音频
   useEffect(() => {
     return () => {
-      window.speechSynthesis.cancel();
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current = null;
       }
     };
   }, []);
 
   const stop = useCallback(() => {
-    window.speechSynthesis.cancel();
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -32,49 +25,20 @@ export function useAudio() {
   }, []);
 
   const play = useCallback(async (text: string) => {
-    // 立即停止当前，并记录本次播放的内容
-    window.speechSynthesis.cancel();
+    // 停止当前正在播放的音频
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
     }
 
-    // 如果点的是同一行且正在播，则停止
+    // 点同一行且正在播 → 停止
     if (playingText === text) {
       setPlayingText(null);
       return;
     }
 
-    // 立即更新高亮
+    // 立即高亮，让用户感受到响应
     setPlayingText(text);
-
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      const voices = window.speechSynthesis.getVoices();
-      const selectedVoice = 
-        voices.find(v => v.lang.includes('zh-CN') && (v.name.includes('Premium') || v.name.includes('Supreme'))) ||
-        voices.find(v => v.lang.includes('zh-CN') && v.name.includes('Online')) ||
-        voices.find(v => v.lang.includes('zh-CN') && v.name.includes('Google')) ||
-        voices.find(v => v.lang.includes('zh-CN'));
-
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        utterance.onend = () => {
-          // 只有当结束的音频依然是当前记录的文本时，才清空高亮
-          // 这样可以防止连续点击时，旧音频的结束回调误伤新音频的高亮
-          setPlayingText(current => current === text ? null : current);
-        };
-        utterance.onerror = () => {
-          setPlayingText(current => current === text ? null : current);
-        };
-        
-        utterance.lang = 'zh-CN';
-        utterance.rate = 0.8;
-        utterance.pitch = 1.05;
-        window.speechSynthesis.speak(utterance);
-        return;
-      }
-    }
 
     try {
       const response = await fetch('/api/tts', {
@@ -82,18 +46,34 @@ export function useAudio() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
       });
-      if (!response.ok) throw new Error('TTS failed');
+
+      if (!response.ok) {
+        console.error('[AudioPlayer] TTS API error:', response.status);
+        setPlayingText(current => current === text ? null : current);
+        return;
+      }
+
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audioRef.current = audio;
+
       audio.onended = () => {
         setPlayingText(current => current === text ? null : current);
         URL.revokeObjectURL(url);
+        audioRef.current = null;
       };
+
+      audio.onerror = () => {
+        setPlayingText(current => current === text ? null : current);
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+      };
+
       await audio.play();
-    } catch {
-      setPlayingText(null);
+    } catch (err) {
+      console.error('[AudioPlayer] play error:', err);
+      setPlayingText(current => current === text ? null : current);
     }
   }, [playingText]);
 
